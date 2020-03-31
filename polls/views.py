@@ -2,34 +2,40 @@ from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
+from django.utils import timezone
+from django.views import generic
 from .models import Choice, Question
 
 # Create your views here.
-def index(request):
-    latest_questions_list = Question.objects.order_by('-pub_date')[:5]
-    context = {'latest_questions_list': latest_questions_list}
-    return render(request, 'polls/index.html', context)
-    # Behind  the scenes
-    # template = loader.get_template('polls/index.html')
-    # context = { 'latest_questions_list': latest_questions_list }
-    # return HttpResponse(template.render(context, request))
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_questions_list'
 
-def detail(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
+    def get_queryset(self):
+        """Return the last 5 published questions"""
+        return(Question
+            .objects
+            .filter(pub_date__lte=timezone.now())
+            .order_by('-pub_date')[:5])
 
-    # behind the scenes
-    # raise Http404("Question does not exist")
-    # Http404 is from django.http module
-    return render(request, 'polls/detail.html', {'question': question})
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
 
-def results(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls.results.html', {'question': question})
+    def get_queryset(self):
+        """
+        Excludes any questions that aren't published yet.
+        """
+        return Question.objects.filter(pub_date__lte=timezone.now())
+
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
 
 def vote(request, question_id):
     question =  get_object_or_404(Question, pk=question_id)
     try:
-        selected_choice = question.chocie_set.get(pk=request.POST['choice'])
+        selected_choice = question.choice_set.get(pk=request.POST['choice'])
     except (KeyError, Choice.DoesNotExist):
         return render(request, 'polls/detail.html', {
             'question': question,
