@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-{% if latest_questions_list %}
-  <ul>
-    {% for question in latest_questions_list %}
-      <li>
-        <a href="{% url 'polls:detail' question.id %}">{{question.question_text}}</a>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>No polls are  available at the moment</p>
-{% endif %}
+  {% if user.is_authenticated %}
+    {% if latest_questions_list %}
+      <ul>
+        {% for question in latest_questions_list %}
+          <li>
+            <a href="{% url 'polls:detail' question.id %}">{{question.question_text}}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No polls are  available at the moment</p>
+    {% endif %}
+  {% endif %}
 {% endblock %}
